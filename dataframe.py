@@ -8,6 +8,7 @@ from imblearn.over_sampling import SMOTE
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 import numpy as np
+from sklearn.ensemble import RandomForestClassifier
 
 segmento = ['VAREJO', 'UNICLASS', 'PERSONALITE']
 uf = ['SP', 'RJ', 'PA', 'MG', 'BA', 'CE', 'DF', 'ES', 'AC', 'AL', 'AP', 'AM', 'GO', 'MA', 'MT', 'MS','PB', 'PR', 'PE', 'PI', 'RN', 'RS', 'RO', 'RR', 'SC', 'SE', 'TO']
@@ -41,16 +42,22 @@ data = {
 df = pd.DataFrame(data)
 
 p_map = {
-    'VAREJO': 0.02,
-    'UNICLASS': 0.05,
-    'PERSONALITE': 0.12
+    'VAREJO': 0.05,
+    'UNICLASS': 0.10,
+    'PERSONALITE': 0.20
 }
 
 df['PROB_BASE'] = df['SEGMENTO'].map(p_map)
-df.loc[df['INTERESSE_CONTEUDO_ESG'] == 1, 'PROB_FINAL'] = df['PROB_BASE'] + 0.02
-df.loc[df['HISTORICO_ADESAO_SUSTENTAVEL'] >= 1, 'PROB_FINAL'] = df['PROB_FINAL'] + 0.03
-df.loc[df['HISTORICO_ADESAO_SUSTENTAVEL'] >= 2, 'PROB_FINAL'] = df['PROB_FINAL'] + 0.05
-df.loc[df['HISTORICO_ADESAO_SUSTENTAVEL'] >= 3, 'PROB_FINAL'] = df['PROB_FINAL'] + 0.06
+df['PROB_FINAL'] = df['PROB_BASE']
+df.loc[df['INTERESSE_CONTEUDO_ESG'] == 1, 'PROB_FINAL'] += 0.15
+df.loc[df['HISTORICO_ADESAO_SUSTENTAVEL'] >= 1, 'PROB_FINAL'] += 0.06
+df.loc[df['HISTORICO_ADESAO_SUSTENTAVEL'] >= 2, 'PROB_FINAL'] += 0.10
+df.loc[df['HISTORICO_ADESAO_SUSTENTAVEL'] >= 3, 'PROB_FINAL'] += 0.12
+df.loc[df['TAXA_USO_CANAL_DIGITAL'] == 1, 'PROB_FINAL'] += 0.09
+
+df['PROB_FINAL'] = np.clip(df['PROB_FINAL'], 0, 1)
+
+df['ADESAO_ESG'] = np.random.binomial(n=1, p=df['PROB_FINAL'])
 
 rendas = []
 scores = []
@@ -151,29 +158,28 @@ plt.show()
 
 
 y = df['ADESAO_ESG']
-
-X = df.drop('ADESAO_ESG', axis=1)
-
-df_encoded = pd.get_dummies(X, columns=['SEGMENTO', 'UF'],dtype=int)
-
-X = df_encoded
-
+X_features = df.drop(['ADESAO_ESG', 'PROB_BASE', 'PROB_FINAL'], axis=1)
+X = pd.get_dummies(
+    X_features,
+    columns=['SEGMENTO', 'UF'],
+    dtype=int
+) 
 X_train, X_test, y_train, y_test = train_test_split(X,y, test_size=0.2, random_state=42)
 
-oversampling = SMOTE(random_state=42, sampling_strategy=1)
 
-X_over, y_over = oversampling.fit_resample(X_train, y_train)
+modelo_rf = RandomForestClassifier(n_estimators=200, random_state=42, class_weight='balanced')
 
-regressao = LogisticRegression(random_state=42, max_iter=100).fit(X_over, y_over)
+modelo_rf.fit(X_train, y_train)
+y_pred_rf = modelo_rf.predict(X_test)
 
-y_pred = regressao.predict(X_test)
+y_prob_rf = modelo_rf.predict_proba(X_test)
+y_prob_classe1_rf = y_prob_rf[:, 1]
+novo_threshold = 0.60
+y_pred_rf_calibrado = (y_prob_classe1_rf >= novo_threshold).astype(int)
 
-print("Relatorio da analise, completo!")
-print(classification_report(y_test, y_pred))
+print(classification_report(y_test, y_pred_rf_calibrado))
 
-cm = confusion_matrix(y_test, y_pred)
-
-plt.figure(figsize=(12,7))
+cm = confusion_matrix(y_test, y_pred_rf_calibrado)
 sns.heatmap(
     cm,
     annot=True,
@@ -183,8 +189,24 @@ sns.heatmap(
     xticklabels=['Previsto Não aderencia (0)', 'Previsto aderencia (1)'],
     yticklabels=['Real não aderiu (0)', 'Real Aderiu (1)']
 )
-
 plt.title('Matriz de confusão', fontsize=12)
 plt.xlabel('Previsao do modelo:')
 plt.ylabel('Valor real:')
+plt.show()
+
+
+importancias = modelo_rf.feature_importances_
+nomes_features = X.columns 
+
+df_importancia = pd.DataFrame({
+    'Feature': nomes_features,
+    'Importancia': importancias
+}).sort_values(by='Importancia', ascending=False)
+
+print("\n--- Top 10 Features Mais Importantes ---")
+print(df_importancia.head(10))
+
+plt.figure(figsize=(10, 6))
+sns.barplot(x='Importancia', y='Feature', data=df_importancia.head(10))
+plt.title('Importância das Features (Random Forest)')
 plt.show()
