@@ -1,8 +1,8 @@
-# 🌿 Eco-Afinidade: Análise Preditiva de Engajamento em ESG (Itaú)
+# 🌿 Eco-Afinidade: Análise Preditiva de Engajamento em ESG
 
 ## 🎯 Descrição do Projeto
 
-O projeto **Eco-Afinidade** desenvolveu um modelo de Machine Learning (XGBoost) para prever a probabilidade de um cliente Itaú aderir a ofertas de **Finanças Sustentáveis** e **ESG** (Environmental, Social, and Governance).
+O projeto **Eco-Afinidade** desenvolveu um modelo de Machine Learning (XGBoost) para prever a probabilidade de um cliente aderir a ofertas de **Finanças Sustentáveis** e **ESG** (Environmental, Social, and Governance).
 
 O objetivo principal é transformar a estratégia de marketing de segmentação ampla para **hiperpersonalização preditiva**, garantindo máxima eficiência no uso do capital e acelerando as metas do Itaú.
 
