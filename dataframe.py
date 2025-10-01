@@ -4,11 +4,10 @@ from random import randint
 import seaborn as sns
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from imblearn.over_sampling import SMOTE
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix, roc_auc_score
 import numpy as np
-from sklearn.ensemble import RandomForestClassifier
+import xgboost as xgb
+
 
 segmento = ['VAREJO', 'UNICLASS', 'PERSONALITE']
 uf = ['SP', 'RJ', 'PA', 'MG', 'BA', 'CE', 'DF', 'ES', 'AC', 'AL', 'AP', 'AM', 'GO', 'MA', 'MT', 'MS','PB', 'PR', 'PE', 'PI', 'RN', 'RS', 'RO', 'RR', 'SC', 'SE', 'TO']
@@ -54,6 +53,7 @@ df.loc[df['HISTORICO_ADESAO_SUSTENTAVEL'] >= 1, 'PROB_FINAL'] += 0.06
 df.loc[df['HISTORICO_ADESAO_SUSTENTAVEL'] >= 2, 'PROB_FINAL'] += 0.10
 df.loc[df['HISTORICO_ADESAO_SUSTENTAVEL'] >= 3, 'PROB_FINAL'] += 0.12
 df.loc[df['TAXA_USO_CANAL_DIGITAL'] == 1, 'PROB_FINAL'] += 0.09
+df.loc[df['COMPARTILHA_OPEN_FINANCE'] == 1, 'PROB_FINAL'] += 0.20
 
 df['PROB_FINAL'] = np.clip(df['PROB_FINAL'], 0, 1)
 
@@ -76,7 +76,6 @@ for seg in df['SEGMENTO']:
         scores.append(0)
 df['RENDA_MENSAL'] = rendas
 df['SCORE_RISCO_CREDITO'] = scores
-
 
 
 adesao_por_segmento = df.groupby('SEGMENTO')['ADESAO_ESG'].mean().sort_values(ascending=False)
@@ -144,7 +143,7 @@ plt.show()
 
 corr_df = df.corr(numeric_only=True, method='pearson')
 
-plt.figure(figsize=(14, 12)) # Aumentei o tamanho para melhor visualização
+plt.figure(figsize=(12, 10)) 
 sns.heatmap(
     corr_df,
     annot=True,
@@ -157,29 +156,40 @@ plt.title('Mapa de Calor da Correlação (Variáveis Numéricas)', fontsize=16)
 plt.show()
 
 
+
+
 y = df['ADESAO_ESG']
-X_features = df.drop(['ADESAO_ESG', 'PROB_BASE', 'PROB_FINAL'], axis=1)
+X_features = df.drop(['ADESAO_ESG', 'PROB_BASE', 'PROB_FINAL', 'UF'], axis=1)
 X = pd.get_dummies(
     X_features,
-    columns=['SEGMENTO', 'UF'],
+    columns=['SEGMENTO'],
     dtype=int
 ) 
 X_train, X_test, y_train, y_test = train_test_split(X,y, test_size=0.2, random_state=42)
 
 
-modelo_rf = RandomForestClassifier(n_estimators=200, random_state=42, class_weight='balanced')
+modelo_xg = xgb.XGBClassifier(
+    n_estimators=500,           
+    learning_rate=0.05,         
+    max_depth=5,                
+    subsample=0.8,              
+    colsample_bytree=0.8,       
+    reg_lambda=1.5,             
+    scale_pos_weight=(y_train.value_counts()[0] / y_train.value_counts()[1]),
+    objective='binary:logistic',
+    eval_metric='auc',         
+    random_state=42
+)
 
-modelo_rf.fit(X_train, y_train)
-y_pred_rf = modelo_rf.predict(X_test)
+modelo_xg.fit(X_train, y_train)
+y_pred_xg = modelo_xg.predict(X_test)
 
-y_prob_rf = modelo_rf.predict_proba(X_test)
-y_prob_classe1_rf = y_prob_rf[:, 1]
-novo_threshold = 0.60
-y_pred_rf_calibrado = (y_prob_classe1_rf >= novo_threshold).astype(int)
+y_prob_xg = modelo_xg.predict_proba(X_test)
+y_prob_classe1_xg = y_prob_xg[:, 1]
+novo_threshold = 0.50
+y_pred_xgb_calibrado = (y_prob_classe1_xg >= novo_threshold).astype(int) 
 
-print(classification_report(y_test, y_pred_rf_calibrado))
-
-cm = confusion_matrix(y_test, y_pred_rf_calibrado)
+cm = confusion_matrix(y_test, y_pred_xgb_calibrado)
 sns.heatmap(
     cm,
     annot=True,
@@ -194,8 +204,7 @@ plt.xlabel('Previsao do modelo:')
 plt.ylabel('Valor real:')
 plt.show()
 
-
-importancias = modelo_rf.feature_importances_
+importancias = modelo_xg.feature_importances_
 nomes_features = X.columns 
 
 df_importancia = pd.DataFrame({
@@ -208,5 +217,17 @@ print(df_importancia.head(10))
 
 plt.figure(figsize=(10, 6))
 sns.barplot(x='Importancia', y='Feature', data=df_importancia.head(10))
-plt.title('Importância das Features (Random Forest)')
+plt.title('Importância das Features (XGboost)')
 plt.show()
+
+auc_score = roc_auc_score(y_test, y_prob_classe1_xg)
+report = classification_report(y_test, y_pred_xgb_calibrado) 
+
+print("\n-------------------------------------------")
+print(f"MÉTRICAS DE PERFORMANCE DO MODELO XGBOOST")
+print("-------------------------------------------")
+print(f"AUC-ROC Score (Capacidade Discriminatória): {auc_score:.4f}")
+print("\n--- Classification Report (Threshold: 0.60) ---")
+print(report)
+print("-------------------------------------------")
+
