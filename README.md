@@ -1,90 +1,34 @@
-🌿 Eco-Afinidade: Análise Preditiva de Engajamento em ESG (Itaú)
-🎯 Objetivo do Projeto
-Construir um modelo de Machine Learning para prever a probabilidade de um cliente Itaú aderir a uma iniciativa ou produto de Sustentabilidade/ESG (ex: Fundos Verdes, Programas de Impacto Social).
+# 🌿 Eco-Afinidade: Análise Preditiva de Engajamento em ESG (Itaú)
 
-A missão é hiperpersonalizar a comunicação, reduzindo o custo de marketing e acelerando a meta do Itaú de mobilizar 1 Trilhões em finanças sustentáveis até 2030.
+## 🎯 Descrição do Projeto
 
-📈 Sumário dos Resultados do Modelo
-O modelo de classificação XGBoost foi treinado com um dataset sintético de 10.000 amostras, simulando características financeiras, comportamentais e dados de Open Finance.
+O projeto **Eco-Afinidade** desenvolveu um modelo de Machine Learning (XGBoost) para prever a probabilidade de um cliente Itaú aderir a ofertas de **Finanças Sustentáveis** e **ESG** (Environmental, Social, and Governance).
 
-Métrica de Performance
+A missão é mover a estratégia de marketing de ESG de segmentação ampla para **hiperpersonalização preditiva**, garantindo máxima eficiência no uso do capital e acelerando as metas de mobilização de R$ 1 Tri.
 
-Valor
+## 📈 Resultados Chave do Modelo (XGBoost)
 
-Insights
+O modelo foi treinado com um dataset sintético de 10.000 amostras e calibrado com um *threshold* de **0.60** para otimizar o equilíbrio entre Precisão e Recall.
 
-AUC-ROC Score
+| Métrica de Performance | Valor | Avaliação de Negócio |
+| :--- | :--- | :--- |
+| **AUC-ROC Score** | **0.6725** | Capacidade estável e preditiva, superior ao acaso. |
+| **F1-Score (Adesão)** | **0.62** | Excelente equilíbrio entre Precisão (0.61) e Recall (0.63). |
+| **Recall (Adesão)** | **0.63** | O modelo captura 63% dos clientes que realmente aderem (ótimo para capturar oportunidades). |
 
-0.6725
+## 🌟 Insights Estratégicos: Os Drivers de Adesão
 
-Capacidade moderada e estável de discriminação entre as classes.
+A análise de importância de *features* revela quais fatores o modelo considera mais relevantes para a adesão, orientando as decisões de investimento em marketing.
 
-F1-Score (Adesão/Classe 1)
+| Rank | Feature | Importância | Ação de Marketing Recomendada |
+| :--- | :--- | :--- | :--- |
+| **1º** | **COMPARTILHA_OPEN_FINANCE** | **25.2%** | **Estratégia Prioritária:** Incentivar o uso do Open Finance como funil de entrada para ofertas ESG. É o preditor mais forte. |
+| **2º** | **INTERESSE_CONTEUDO_ESG** | 13.0% | **Personalização:** Usar o consumo prévio de conteúdo (blog, vídeos) como *trigger* imediato para a oferta. |
+| **3º** | **HISTORICO_ADESAO_SUSTENTAVEL** | 10.0% | **Fidelidade e Upsell:** Priorizar clientes com engajamento ESG comprovado para ofertas de maior valor. |
 
-0.62
+## 🛠️ Requisitos e Como Rodar o Projeto
 
-Indica um bom equilíbrio entre Precisão e Recall, ideal para um rollout piloto.
-
-🌟 Principais Drivers de Negócio (Feature Importance)
-O modelo revelou que a Afinidade Digital é o principal fator de adesão ESG, superando Renda e Segmento.
-
-Rank
-
-Feature
-
-Importância
-
-Ação Estratégica Sugerida
-
-1º
-
-COMPARTILHA_OPEN_FINANCE
-
-25.2%
-
-Prioridade Máxima: Incentivar o uso do Open Finance como funil de entrada para ofertas ESG.
-
-2º
-
-INTERESSE_CONTEUDO_ESG
-
-13.0%
-
-Usar o histórico de consumo de conteúdo para personalizar a comunicação de venda.
-
-3º
-
-HISTORICO_ADESAO_SUSTENTAVEL
-
-10.0%
-
-Direcionar upsells e novas ofertas a clientes com engajamento ESG comprovado.
-
-📊 EDA Principal: Taxa de Adesão por Compartilhamento de Open Finance
-O gráfico gerado na Análise Exploratória (EDA) demonstra visualmente o insight mais importante: clientes que compartilham dados Open Finance possuem uma taxa de adesão a ESG significativamente maior, validando o Rank 1 da Importância de Features.
-
-<img width="1440" height="798" alt="image" src="https://github.com/user-attachments/assets/182582b4-ecbb-45cf-9f59-7f988f869f70" />
-
-
-🛠️ Como Rodar o Código (Simulação)
-Pré-requisitos
-Python 3.8+
-
-Bibliotecas: pandas, numpy, scikit-learn, xgboost, matplotlib, seaborn.
-
-Passos
-Clone o repositório:
-
-# Se estivesse no GitHub:
-# git clone <link-do-seu-repo>
-# cd eco-afinidade
-
-Instale as dependências:
-
+### Pré-requisitos
+Certifique-se de ter o ambiente Python configurado com as seguintes bibliotecas:
+```bash
 pip install pandas numpy scikit-learn xgboost matplotlib seaborn
-
-Execute o script principal (eco_afinidade.py - simulado neste ambiente):
-
-python eco_afinidade.py
-
-O script irá gerar o dataset simulado, realizar a engenharia de features, treinar o modelo XGBoost, e imprimir todas as métricas de performance (AUC, F1-Score) e o ranking de Importância de Features.
