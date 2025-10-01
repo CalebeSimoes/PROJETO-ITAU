@@ -30,6 +30,24 @@ A análise de importância de *features* revela que a **Afinidade Digital** é o
 
 ### Visualização: Importância das Features
 
-*Atenção: Adicione a imagem do seu gráfico Barplot do XGBoost aqui!*
+<img width="1440" height="795" alt="image" src="https://github.com/user-attachments/assets/c51f49d8-0986-45da-bd49-3fca0565e444" />
+
 
 ```markdown
+
+🛠️ Como Rodar o Projeto
+Pré-requisitos
+Certifique-se de ter o ambiente Python configurado com as seguintes bibliotecas:
+
+Bash
+
+pip install pandas numpy scikit-learn xgboost matplotlib seaborn
+Execução
+Salve o código principal do modelo (eco_afinidade.py).
+
+Execute o script via terminal:
+
+Bash
+
+python eco_afinidade.py
+O script irá gerar o dataset simulado, treinar o modelo e imprimir as métricas finais.
